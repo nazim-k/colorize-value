@@ -1,0 +1,30 @@
+{
+  "name": "colorize-value",
+  "version": "0.0.1",
+  "description": "Return equivalent color of given value",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node tester.js",
+    "look": "open index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nazim-k/colorize-value.git"
+  },
+  "keywords": [
+    "colorize",
+    "value",
+    "return",
+    "equivalent",
+    "color",
+    "of",
+    "value"
+  ],
+  "author": "nazim.k",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nazim-k/colorize-value/issues"
+  },
+  "homepage": "https://github.com/nazim-k/colorize-value#readme"
+}
