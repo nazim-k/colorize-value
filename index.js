@@ -1,18 +1,42 @@
-module.exports = (function() {
+const colorizer = (function() {
     'use strict';
-    // var maxHue = 340, saturation = 100, lightness = 100, range = {min: 0, max: 100},
-    //     hidden = 'hiden value', rgb;
     const config = {
-        maxHue: 235,
-        hue: 120,
-        saturation: 100,
-        lightness: 70,
-        minValue: 0,
-        maxValue: 100,
-        reverse: true,
-        color: 'HEX',
-        base: true
+        _maxHue: 235,
+        _hue: 120,
+        _saturation: 100,
+        _lightness: 70,
+        _minValue: 0,
+        _maxValue: 100,
+        _reverse: true,
+        _color: 'hex',
+        _base: true,
+        _throwError: false,
+        get maxHue() { return this._maxHue },
+        set maxHue(maxHue) { this._maxHue = validate(maxHue, 0, 360) },
+        get hue() { return this._hue },
+        set hue(hue) { this._hue = validate(hue, 0, 360) },
+        get saturation() { return this._saturation },
+        set saturation(s) { this._saturation = validate(s, 0, 100)},
+        get lightness() { return this._lightness },
+        set lightness(l) { this._lightness = validate(l, 0, 100)},
+        get minValue() { return this._minValue },
+        set minValue(min) { this._minValue = min < this._maxValue ? min : this._minValue },
+        get maxValue() { return this._maxValue },
+        set maxValue(max) { this._maxValue = max > this._minValue ? max : this._maxValue },
+        get reverse() { return this._reverse },
+        set reverse(bool) { this._reverse = typeof bool === 'boolean' ? bool : this._reverse },
+        get color() { return this._color },
+        set color(c) { this._color = c.toLowerCase() === 'rgb' ? 'rgb' : c.toLowerCase() === 'hsl' ? 'hsl' : String(c)},
+        get base() { return this._base },
+        set base(b) { this._base = b.toLowerCase() !== 'saturation' },
+        get throwError() { return this._throwError },
+        set throwError(bool) { this._throwError = typeof bool === 'boolean' ? bool : this._throwError }
     };
+
+    function validate(value, min, max) {
+        if ( typeof value !== 'number' ) return;
+        return value < min ? min : value > max ? max : value;
+    }
 
     /**
      * inner variables
@@ -55,7 +79,7 @@ module.exports = (function() {
                 result = `rgb(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)})`;
                 break;
 
-            case 'hex':
+            case 'hls':
                 result = `hsl(${h*360}, ${s*100}%, ${l*100}%)`;
                 break;
 
@@ -116,6 +140,7 @@ module.exports = (function() {
             throw new Error('min value should be less then max value');
         config.minValue = min;
         config.maxValue = max;
+        return this
     }
 
     function setHue(hue) {
@@ -140,69 +165,82 @@ module.exports = (function() {
     }
 
     function configuration(c) {
-        for (let key in c) {
-            switch (key) {
-                case 'maxHue':
-                    if (c.maxHue < 0 || c.maxHue > 360)
-                        throw new Error(`Hue ${c.maxHue} out of range 0 ≤ hue ≤ 360`);
-                    config.maxHue = c.maxHue;
-                    break;
+        if (config.throwError) {
+            if (!Object.prototype.toString(c).match(/Object/)) throw new Error('Config should be an Object');
+            for (let key in c) {
+                switch (key) {
+                    case 'maxHue':
+                        if (c.maxHue < 0 || c.maxHue > 360)
+                            throw new Error(`Hue ${c.maxHue} out of range 0 ≤ hue ≤ 360`);
+                        config.maxHue = c.maxHue;
+                        break;
 
-                case 'hue':
-                    if (c.hue < 0 || c.hue > 360)
-                        throw new Error(`Hue ${c.hue} out of range 0 ≤ hue ≤ 360`);
-                    config.hue = c.hue;
-                    break;
+                    case 'hue':
+                        if (c.hue < 0 || c.hue > 360)
+                            throw new Error(`Hue ${c.hue} out of range 0 ≤ hue ≤ 360`);
+                        config.hue = c.hue;
+                        break;
 
-                case 'saturation':
-                    if (c.saturation < 0 || c.saturation > 100)
-                        throw new Error(`Saturation ${c.saturation} out of range 0 ≤ hue ≤ 100`);
-                    config.saturation = c.saturation;
-                    break;
+                    case 'saturation':
+                        if (c.saturation < 0 || c.saturation > 100)
+                            throw new Error(`Saturation ${c.saturation} out of range 0 ≤ hue ≤ 100`);
+                        config.saturation = c.saturation;
+                        break;
 
-                case 'lightness':
-                    if (c.lightness < 0 || c.lightness > 100)
-                        throw new Error(`Saturation ${c.lightness} out of range 0 ≤ hue ≤ 100`);
-                    config.lightness = c.lightness;
-                    break;
+                    case 'lightness':
+                        if (c.lightness < 0 || c.lightness > 100)
+                            throw new Error(`Saturation ${c.lightness} out of range 0 ≤ hue ≤ 100`);
+                        config.lightness = c.lightness;
+                        break;
 
-                case 'minValue':
-                    if (c.minValue >= config.maxValue)
-                        throw new Error('min value should be less then max value');
-                    config.minValue = c.minValue;
-                    break;
+                    case 'minValue':
+                        if (c.minValue >= config.maxValue)
+                            throw new Error('min value should be less then max value');
+                        config.minValue = c.minValue;
+                        break;
 
-                case 'maxValue':
-                    if (config.minValue >= c.maxValue)
-                        throw new Error('max value should be over then min value');
-                    config.maxValue = c.maxValue;
-                    break;
+                    case 'maxValue':
+                        if (config.minValue >= c.maxValue)
+                            throw new Error('max value should be over then min value');
+                        config.maxValue = c.maxValue;
+                        break;
 
-                case 'reverse':
-                    if (typeof c.reverse === 'boolean')
-                        config.reverse = c.reverse;
-                    break;
+                    case 'reverse':
+                        if (typeof c.reverse === 'boolean')
+                            config.reverse = c.reverse;
+                        break;
 
-                case 'color':
-                    if (c.color.toLowerCase() === 'rgb')
-                        config.color = 'rgb';
-                    else if (c.color.toLowerCase() === 'hsl')
-                        config.color = 'hsl';
-                    else config.color = 'hex';
-                    break;
+                    case 'color':
+                        if (c.color.toLowerCase() === 'rgb')
+                            config.color = 'rgb';
+                        else if (c.color.toLowerCase() === 'hsl')
+                            config.color = 'hsl';
+                        else config.color = 'hex';
+                        break;
 
-                case 'base':
-                    if (c.base === 'color')
-                        config.base = true;
-                    else if (c.base === 'saturation')
-                        config.base = false;
-                    else throw new Error('base can be saturation either color');
-                    break;
+                    case 'base':
+                        if (c.base === 'color')
+                            config.base = true;
+                        else if (c.base === 'saturation')
+                            config.base = false;
+                        else throw new Error('base can be saturation either color');
+                        break;
 
-                default:
-                    throw new Error(`There is no ${key} configuration`)
+                    default:
+                        throw new Error(`There is no ${key} configuration`)
+                }
+            }
+        } else {
+            for (let key in c) {
+                if (key in config)
+                    config[key] = c[key]
             }
         }
+
+    }
+
+    function getValueOf(v) {
+        return config[v]
     }
 
     return {
@@ -211,7 +249,16 @@ module.exports = (function() {
         minMax,
         setHue,
         setSat,
-        setLight
+        setLight,
+        getValueOf
     };
 
 }());
+
+if (module && process) {
+    module.exports = colorizer;
+} else if (window && !module) {
+    window.colorizer = colorizer;
+} else {
+    throw new Error('Can not define environment')
+}
