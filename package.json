@@ -1,5 +1,5 @@
 {
-  "name": "colorizer",
+  "name": "colorize-value",
   "version": "1.0.0",
   "description": "Return equivalent color of given value",
   "main": "index.js",
@@ -19,7 +19,7 @@
     "equivalent",
     "color",
     "of",
-    "value"
+    "number"
   ],
   "author": "nazim.k",
   "license": "ISC",

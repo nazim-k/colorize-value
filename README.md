@@ -3,7 +3,7 @@ colorizer
 Colorizer convert given value to equivalent color.
 
 ```javascript
-const colorizer = require('colorizer'),
+const colorizer = require('colorize-value'),
   temperature = [-50, -10, 0, 20, 45, 80],
   dataSet = colorizer.convert(temperature);
 
@@ -13,7 +13,7 @@ in preceding example each element in dataSet array is an equivalent color of ele
 
 __Also you can convert single value__
 ```javascript
-const colorizer = require('colorizer'),
+const colorizer = require('colorize-value'),
 
 colorizer.configuration({
   maxHue: 60, // color range from red to yellow. By default 235(blue)
@@ -39,7 +39,7 @@ __Colorizer properties__
 * __minMax__
   >function take's two param and set min and max value of colorizer
   ```javascript
-  const colorizer = require('colorizer'),
+  const colorizer = require('colorize-value'),
     min = 10,
     max=120;
 
@@ -48,7 +48,7 @@ __Colorizer properties__
 * __setHue__
   >function to set hue of colorizer;
   ```javascript
-  const colorizer = require('colorizer'),
+  const colorizer = require('colorize-value'),
     dataSet = [15, 0, 48, 52, 90, 32],
     colors = [];
 
