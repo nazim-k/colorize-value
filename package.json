@@ -1,6 +1,6 @@
 {
-  "name": "colorize-value",
-  "version": "0.0.1",
+  "name": "colorizer",
+  "version": "1.0.0",
   "description": "Return equivalent color of given value",
   "main": "index.js",
   "scripts": {
