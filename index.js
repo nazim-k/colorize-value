@@ -31,7 +31,7 @@ const colorizer = (function() {
         set base(b) { this._base = b.toLowerCase() !== 'saturation' },
         get throwError() { return this._throwError },
         set throwError(bool) { this._throwError = typeof bool === 'boolean' ? bool : this._throwError }
-    };
+    }, clrzr = {};
 
     function validate(value, min, max) {
         if ( typeof value !== 'number' ) return;
@@ -243,21 +243,23 @@ const colorizer = (function() {
         return config[v]
     }
 
-    return {
-        convert,
-        configuration,
-        minMax,
-        setHue,
-        setSat,
-        setLight,
-        getValueOf
-    };
+    Object.defineProperties(clrzr, {
+        convert: {value: convert, writable: false, configurable: false},
+        configuration: {value: configuration, writable: false, configurable: false},
+        minMax: {value: minMax, writable: false, configurable: false},
+        setHue: {value: setHue, writable: false, configurable: false},
+        setSat: {value: setSat, writable: false, configurable: false},
+        setLight: {value: setLight, writable: false, configurable: false},
+        getValueOf: {value: getValueOf, writable: false, configurable: false}
+    });
+
+    return clrzr
 
 }());
 
-if (module && process) {
+if (typeof module === 'object' && typeof process === 'object') {
     module.exports = colorizer;
-} else if (window && !module) {
+} else if (typeof window === 'object' && typeof module === 'undefined') {
     window.colorizer = colorizer;
 } else {
     throw new Error('Can not define environment')
