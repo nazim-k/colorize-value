@@ -93,6 +93,7 @@ const colorizer = (function() {
     }
 
     function getColor(value, maxValue, minValue) {
+        if (value > maxValue || value < minValue) throw Error(`Value ${value} out of range ${minValue} ≤ v ≤ ${maxValue}`);
         const range = maxValue - minValue,
             { maxHue, hue, saturation, lightness, reverse, base } = config,
             k = base ? maxHue / range : 100 / range,
@@ -236,6 +237,8 @@ const colorizer = (function() {
                     config[key] = c[key]
             }
         }
+
+        return this
 
     }
 
