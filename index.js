@@ -1,7 +1,8 @@
 const colorizer = (function() {
     'use strict';
     const config = {
-        _maxHue: 235,
+        _maxColComp: 235,
+        _minColComp: 0,
         _hue: 120,
         _saturation: 100,
         _lightness: 70,
@@ -9,10 +10,37 @@ const colorizer = (function() {
         _maxValue: 100,
         _reverse: true,
         _color: 'hex',
-        _base: true,
+        _base: 'color',
         _throwError: false,
-        get maxHue() { return this._maxHue },
-        set maxHue(maxHue) { this._maxHue = validate(maxHue, 0, 360) },
+        _arrayBound: true,
+        _default: {
+            maxColComp: 235,
+            minColComp: 0,
+            hue: 120,
+            saturation: 100,
+            lightness: 70,
+            minValue: 0,
+            maxValue: 100,
+            reverse: true,
+            color: 'hex',
+            base: 'color',
+            throwError: false,
+            arrayBound: true,
+        },
+        get maxColComp() { return this._maxColComp },
+        set maxColComp(maxColComp) {
+            var max = this._base === 'color' ? 360 : 100;
+            this._maxColComp = maxColComp > this._minColComp
+                ? validate(maxColComp, 0, max)
+                : this._maxColComp
+        },
+        get minColComp() { return this._minColComp },
+        set minColComp(minColComp) {
+            var max = this._base === 'color' ? 360 : 100;
+            this._minColComp = minColComp < this._maxColComp
+                ? validate(minColComp, 0, max)
+                : this._minColComp
+        },
         get hue() { return this._hue },
         set hue(hue) { this._hue = validate(hue, 0, 360) },
         get saturation() { return this._saturation },
@@ -26,11 +54,27 @@ const colorizer = (function() {
         get reverse() { return this._reverse },
         set reverse(bool) { this._reverse = typeof bool === 'boolean' ? bool : this._reverse },
         get color() { return this._color },
-        set color(c) { this._color = c.toLowerCase() === 'rgb' ? 'rgb' : c.toLowerCase() === 'hsl' ? 'hsl' : String(c)},
+        set color(c) { c = c.toLowerCase(); this._color = !~['rgb', 'hex', 'hsl'].indexOf() ? this._color : c },
         get base() { return this._base },
-        set base(b) { this._base = b.toLowerCase() !== 'saturation' },
+        set base(b) {
+            var max;
+            b = b.toLowerCase();
+            this._base = !~['color', 'saturation', 'lightness'].indexOf(b) ? this._base : b;
+            max = this._base === 'color' ? 360 : 100;
+            if (this._maxColComp > max) this._maxColComp = max;
+            if (this._minColComp > this._maxColComp) this._minColComp = 0;
+        },
         get throwError() { return this._throwError },
-        set throwError(bool) { this._throwError = typeof bool === 'boolean' ? bool : this._throwError }
+        set throwError(bool) { this._throwError = typeof bool === 'boolean' ? bool : this._throwError },
+        get arrayBound() { return this._arrayBound },
+        set arrayBound(bool) { this._arrayBound = typeof bool === 'boolean' ? bool : this._arrayBound },
+        get default () { return this._default },
+        set default (settings) {
+            for (let key in settings) {
+                if (this.hasOwnProperty(key))
+                    this[key] = settings[key];
+            }
+        }
     }, clrzr = {};
 
     function validate(value, min, max) {
@@ -95,14 +139,16 @@ const colorizer = (function() {
     function getColor(value, maxValue, minValue) {
         if (value > maxValue || value < minValue) throw Error(`Value ${value} out of range ${minValue} ≤ v ≤ ${maxValue}`);
         const range = maxValue - minValue,
-            { maxHue, hue, saturation, lightness, reverse, base } = config,
-            k = base ? maxHue / range : 100 / range,
+            { maxColComp, minColComp, hue, saturation, lightness, reverse, base } = config,
+            k = (maxColComp - minColComp) / range,
             cValue = reverse
-                ? -k * (value - maxValue)
-                : k * ( value - minValue ),
-            color = base
+                ? maxColComp - k * ( value - minValue )
+                : minColComp + k * ( value - minValue ),
+            color = base === 'color'
                 ? converter( cValue, saturation, lightness )
-                : converter(hue, cValue, lightness);
+                : base === 'saturation'
+                ? converter(hue, cValue, lightness)
+                : converter(hue, saturation, cValue);
 
         return color
     }
@@ -112,8 +158,8 @@ const colorizer = (function() {
         var maxValue, minValue, value, result;
 
         if (Array.isArray(args[0])) {
-            maxValue = Math.max.apply(null, args[0]);
-            minValue = Math.min.apply(null, args[0]);
+            maxValue = config.arrayBound ? Math.max.apply(null, args[0]) : config.maxValue;
+            minValue = config.arrayBound ? Math.min.apply(null, args[0]) : config.minValue;
             value = args[0];
             result = [];
             for (var i = 0; i < value.length; i+=1) {
@@ -137,29 +183,38 @@ const colorizer = (function() {
     }
 
     function minMax(min, max) {
-        if (min >= max)
+        if (config.throwError && min >= max)
             throw new Error('min value should be less then max value');
         config.minValue = min;
         config.maxValue = max;
         return this
     }
 
+    function setBoundary(min, max) {
+        var upperBound = base === 'color' ? 360 : 100;
+        if (config.throwError && (hue < 0 || hue > upperBound))
+            throw new Error(`min ${min} and max ${max} out of range 0 ≤ hue ≤ ${upperBound}`);
+        config.minColComp = min;
+        config.maxColComp = max;
+        return this
+    }
+
     function setHue(hue) {
-        if (hue < 0 || hue > 360)
+        if (config.throwError &&  (hue < 0 || hue > 360))
             throw new Error(`Hue ${hue} out of range 0 ≤ hue ≤ 360`);
         config.hue = hue;
         return this
     }
 
     function setSat(sat) {
-        if (sat < 0 || sat > 100)
+        if (config.throwError && (sat < 0 || sat > 100))
             throw new Error(`Saturation ${sat} out of range 0 ≤ hue ≤ 100`);
         config.saturation = sat;
         return this
     }
 
     function setLight(light) {
-        if (light < 0 || light > 100)
+        if (config.throwError && (light < 0 || light > 100))
             throw new Error(`Saturation ${light} out of range 0 ≤ hue ≤ 100`);
         config.lightness = light;
         return this
@@ -167,13 +222,20 @@ const colorizer = (function() {
 
     function configuration(c) {
         if (config.throwError) {
-            if (!Object.prototype.toString(c).match(/Object/)) throw new Error('Config should be an Object');
+            if (typeof c === 'object') throw new Error('Config should be an Object');
+            var max = base === 'color' ? 360 : 100;
             for (let key in c) {
                 switch (key) {
-                    case 'maxHue':
-                        if (c.maxHue < 0 || c.maxHue > 360)
-                            throw new Error(`Hue ${c.maxHue} out of range 0 ≤ hue ≤ 360`);
-                        config.maxHue = c.maxHue;
+                    case 'maxColComp':
+                        if (c.maxColComp < 0 || c.maxColComp > max)
+                            throw new Error(`Hue ${c.maxColComp} out of range 0 ≤ hue ≤ ${max}`);
+                        config.maxColComp = c.maxColComp;
+                        break;
+
+                    case 'minColComp':
+                        if (c.minColComp < 0 || c.minColComp > max)
+                            throw new Error(`${base} color component ${c.minColComp} out of range 0 ≤ hue ≤ ${max}`);
+                        config.minColComp = c.minColComp;
                         break;
 
                     case 'hue':
@@ -212,20 +274,26 @@ const colorizer = (function() {
                         break;
 
                     case 'color':
-                        if (c.color.toLowerCase() === 'rgb')
-                            config.color = 'rgb';
-                        else if (c.color.toLowerCase() === 'hsl')
-                            config.color = 'hsl';
-                        else config.color = 'hex';
+                        if(!~['rgb', 'hsl', 'hex'].indexOf(c.color.toLowerCase()))
+                            throw new Error(`There is no color schema ${c.color.toLowerCase}`);
+                        config.color = c.color;
                         break;
 
                     case 'base':
-                        if (c.base === 'color')
-                            config.base = true;
-                        else if (c.base === 'saturation')
-                            config.base = false;
-                        else throw new Error('base can be saturation either color');
+                        if (!~['color', 'saturation', 'hue'].indexOf(c.base.toLowerCase()))
+                            throw new Error('base can be saturation either color');
+                        config.base = c.base;
                         break;
+
+                    case 'throwError':
+                        if (typeof c.throwError !== 'boolean')
+                            throw new Error('throwError should be a boolean type');
+                        config.throwError = c.throwError;
+
+                    case 'arrayBound':
+                        if (typeof c.arrayBound !== 'boolean')
+                            throw new Error('arrayBound should be a boolean type');
+                        config.arrayBound = c.arrayBound;
 
                     default:
                         throw new Error(`There is no ${key} configuration`)
@@ -233,7 +301,7 @@ const colorizer = (function() {
             }
         } else {
             for (let key in c) {
-                if (key in config)
+                if (config.hasOwnProperty(key))
                     config[key] = c[key]
             }
         }
@@ -246,6 +314,14 @@ const colorizer = (function() {
         return config[v]
     }
 
+    function setDefault(settings) {
+        settings = typeof settings === 'object'
+            ? settings
+            : config.default;
+
+        config.default = settings;
+    }
+
     Object.defineProperties(clrzr, {
         convert: {value: convert, writable: false, configurable: false},
         configuration: {value: configuration, writable: false, configurable: false},
@@ -253,7 +329,8 @@ const colorizer = (function() {
         setHue: {value: setHue, writable: false, configurable: false},
         setSat: {value: setSat, writable: false, configurable: false},
         setLight: {value: setLight, writable: false, configurable: false},
-        getValueOf: {value: getValueOf, writable: false, configurable: false}
+        getValueOf: {value: getValueOf, writable: false, configurable: false},
+        setDefault: {value: setDefault, writable: false, configurable: false}
     });
 
     return clrzr

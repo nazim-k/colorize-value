@@ -1,6 +1,6 @@
 colorizer
----
-Colorizer convert given value to equivalent color.
+-
+Colorizer convert given value to equivalent color and allow colorize charts or any html elements. You can set up colorizer to convert value into color as you need.
 
 ```javascript
 const colorizer = require('colorize-value'),
@@ -9,28 +9,80 @@ const colorizer = require('colorize-value'),
 
 //dataSet = [ '#6673FF', '#66FFD3', '#66FFA5', '#83FF66', '#F7FF66', '#FF6666' ]
 ```
-in preceding example each element in dataSet array is an equivalent color of element in temperature array with the same index. Minimal temperature equal to blue color and maximum temperature equal to red.
+in preceding example each element in dataSet array is an equivalent color of element in temperature array with the same index. Minimal temperature equal to blue color and maximum temperature equal to red. Also you can convert single value
 
-__Also you can convert single value__
+Configuration of colorizer
+-
 ```javascript
 const colorizer = require('colorize-value'),
 
 colorizer.configuration({
-  maxHue: 60, // color range from red to yellow. By default 235(blue)
-  hue: 120, //base equal to saturation colorizer will be convert all value to color with hue=120 and equivalent saturation
-  saturation: 100, //saturation of return color
-  lightness: 70, //lightnessof return color
-  minValue: 0,
+  maxColComp: 60,
+  // set max value of opted color component(hue, saturation, lightness)
+  minColComp: 0,
+  // set min value of opted color component(hue, saturation, lightness)
+  /*
+  You can specify range of color component (hue, saturation, lightness)
+  to convert value relative to this range.
+  For example convert all value relative to range
+  from red(minValue hue 0) to blue color (maxValue hue 235)
+  */
+  hue: 120,
+  /*
+  set up hue if you convert value to color
+  using saturation or lightness
+  */
+  saturation: 100,
+  /*
+  set up saturation if you convert value to color
+  using hue or lightness
+  */
+  lightness: 70,
+  /*
+  set up lightness if you convert value to color using hue or saturation
+  */
+  minValue: -60,
   maxValue: 100,
-  //you can set minValue and maxValue to convert single value to color
-  reverse: true, //define color for min and max value. If reverse is true then min value equivalent to blue color and max to red
-  color: 'hex', //return color in hex. You can set rgb or hsl
-  base: 'color',//equate value to color. You can also set base to 'saturation' and equate value to color with set hue and equivalent saturation
-  throwError: false, //You can not set hue more then 360 or set minValue more then maxValue. You can set throwError to false and if this case colorizer set appropriate value without throwing error. For example if you set saturation to 120 it will be implicit change to 100 without throwing console.error();
+  /*
+  To convert value relative to certain range
+  you can set up minValue and maxValue of the range
+  */
+  reverse: true,
+  /*
+  If you want to equate maxColComp to minValue
+  and minColComp to maxValue
+  you can set up reverse to true.
+  */
+  color: 'hex',
+  /*
+  You can return color in deferent format(hsl, hex, rgb)
+  */
+  base: 'color',
+  /*
+  You can convert value using different color components,
+  hue, saturation and lightness.
+  */
+  throwError: false,
+  /*
+  You can not set hue more then 360 or set minValue more then maxValue.
+  And if you want to set appropriate value automatically
+  without throwing an error, set up throwError property to false.
+  For example if you set saturation to 120
+  it will be implicit change to 100
+  without throwing an error;
+  */
+  arrayBound: true,
+  /*
+  If you convert to color an array of values,
+  minValue and maxValue correspond to min and max value in that array.
+  But if you want to convert value relative to specific range
+  you can set arrayBound to false.
+  */
 })
 ```
 
-__Colorizer properties__
+Colorizer properties
+-
 
 * __convert__
   >function takes array or number and return array of equivalent colors or single color
@@ -43,24 +95,30 @@ __Colorizer properties__
     min = 10,
     max=120;
 
-  colorizer.minMax(min, max).convert(25)
+  const divColor = colorizer.minMax(min, max).convert(25)
   ```
 * __setHue__
   >function to set hue of colorizer;
   ```javascript
   const colorizer = require('colorize-value'),
     dataSet = [15, 0, 48, 52, 90, 32],
-    colors = [];
+    barChartcolors = [];
 
-  colorizer.configuration({base: 'saturation'});
+  colorizer.configuration({
+    base: 'lightness',
+    maxColComp: 85,
+    minColComp: 45
+  });
 
   for(let i = 0; i < dataSet.length; i++) {
 
     if (i%2) {
-      colors.push(colorizer.setHue(180).convert(dataSet[i]));
+      colorizer.setHue(180);
     } else {
-      colors.push(colorizer.setHue(180).convert(dataSet[i]));
+      colorizer.setHue(15);
     }
+
+    barChartcolors.push(colorizer.convert(dataSet[i]))
 
   }
   ```
@@ -79,3 +137,19 @@ __Colorizer properties__
   ```javascript
   colorizer.getValueOf('maxHue');
   ```
+* __setDefault__
+  > function takes an object as a parameter and set up given config to default value. If you don't pass a parameter setDefault function will reset config to default
+  ```javascript
+  //Change default arrayBound: true;
+  colorizer.setDefault({arrayBound: false}); // now arrayBound fasle by default
+
+  colorizer.configuration({
+    arrayBound: true,
+    base: 'lightness',
+  }); // change config
+
+  colorizer.setDefault(); // reset to default config
+  //base: 'color', arrayBound: false
+  ```
+
+Also you can chain _configuration, minMax, setHue, setSat, setLight_ properties.

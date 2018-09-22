@@ -15,11 +15,13 @@
   "keywords": [
     "colorize",
     "value",
-    "return",
+    "charts",
     "equivalent",
     "color",
-    "of",
-    "number"
+    "number",
+    "array",
+    "style",
+    "html"
   ],
   "author": "nazim.k",
   "license": "ISC",
